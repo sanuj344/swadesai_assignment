@@ -1,4 +1,5 @@
 import { prisma } from "@repo/db";
+import { routerAgent } from "@repo/ai/router/router.agent";
 
 interface SendMessageInput {
   conversationId?: string;
@@ -9,7 +10,7 @@ interface SendMessageInput {
 export async function sendMessage(input: SendMessageInput) {
   let conversationId = input.conversationId;
 
-  // ✅ ALWAYS ensure user exists FIRST
+  // ✅ 1. Ensure user exists
   await prisma.user.upsert({
     where: { id: input.userId },
     update: {},
@@ -19,7 +20,7 @@ export async function sendMessage(input: SendMessageInput) {
     },
   });
 
-  // ✅ NOW create conversation safely
+  // ✅ 2. Create conversation if not provided
   if (!conversationId) {
     const conversation = await prisma.conversation.create({
       data: {
@@ -30,7 +31,7 @@ export async function sendMessage(input: SendMessageInput) {
     conversationId = conversation.id;
   }
 
-  // ✅ store user message
+  // ✅ 3. Save user message
   await prisma.message.create({
     data: {
       conversationId,
@@ -39,12 +40,19 @@ export async function sendMessage(input: SendMessageInput) {
     },
   });
 
-  // ✅ assistant reply
+  // ✅ 4. Ask router which agent should respond
+  const agentResponse = await routerAgent({
+    userId: input.userId,
+    conversationId,
+    message: input.message,
+  });
+
+  // ✅ 5. Save assistant response
   const assistantMessage = await prisma.message.create({
     data: {
       conversationId,
       role: "assistant",
-      content: "Thanks for contacting support. How can I help?",
+      content: agentResponse.text,
     },
   });
 
@@ -57,7 +65,6 @@ export async function sendMessage(input: SendMessageInput) {
 export async function getConversations(userId: string) {
   return await prisma.conversation.findMany({
     where: { userId },
-    include: { messages: true },
     orderBy: { createdAt: "desc" },
   });
 }
@@ -65,7 +72,11 @@ export async function getConversations(userId: string) {
 export async function getConversation(id: string) {
   return await prisma.conversation.findUnique({
     where: { id },
-    include: { messages: { orderBy: { createdAt: "asc" } } },
+    include: {
+      messages: {
+        orderBy: { createdAt: "asc" },
+      },
+    },
   });
 }
 

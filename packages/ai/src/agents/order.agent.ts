@@ -1,18 +1,29 @@
 import { AgentInput, AgentResponse } from "./types";
 import { getUserOrders } from "../tools/order.tools";
+import { generateText } from "ai";
+import { model } from "../llm";
 
 export async function orderAgent(
   input: AgentInput
 ): Promise<AgentResponse> {
   const orders = await getUserOrders(input.userId);
 
-  if (!orders.length) {
-    return { text: "I couldn't find any orders for your account." };
-  }
+  const prompt = `
+You are an order support specialist.
 
-  const latest = orders[0];
+Orders:
+${JSON.stringify(orders, null, 2)}
 
-  return {
-    text: `Your latest order is ${latest.status}. Tracking: ${latest.trackingNumber}`,
-  };
+User question:
+${input.message}
+
+Answer clearly using the data.
+`;
+
+  const { text } = await generateText({
+    model,
+    prompt,
+  });
+
+  return { text };
 }

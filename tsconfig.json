@@ -3,8 +3,8 @@
     "baseUrl": ".",
     "paths": {
       "@repo/types": ["packages/types/src"],
-      "@repo/db": ["packages/db"],
-      "@repo/ai": ["packages/ai/src"]
+      "@repo/db": ["packages/db/src"],
+      "@repo/ai/*": ["packages/ai/src/*"]
     }
   }
 }
