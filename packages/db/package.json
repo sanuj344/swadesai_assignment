@@ -1,4 +1,14 @@
 {
   "name": "@repo/db",
-  "version": "1.0.0"
+  "version": "1.0.0",
+    "main": "src/index.ts",
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "dotenv": "^17.2.4",
+    "prisma": "^5.22.0"
+  },
+  "prisma": {
+  "seed": "tsx prisma/seed.ts"
+}
+
 }
